@@ -1,3 +1,10 @@
+"""
+Author: Riccardo Andreoni
+Title: Implementation of Convolutional Neural Network from scratch.
+File: utils.py
+"""
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-whitegrid')
@@ -16,6 +23,71 @@ def shuffle_rows(data):
 
 def normalize_pixels(data):
   return data/255.
+
+
+class Layer:
+    def __init__(self):
+        self.input = None
+        self.output = None
+    
+    def forward(self, input):
+        
+        pass
+    
+    def backward(self, output_gradient, learning_rate):
+        
+        
+        pass
+
+# create Convolutional_Layer class. It inherits from Layer class
+class Convolutional_Layer(Layer):
+    def __init__(self, input_shape, kernel_size, depth):
+        # unpack input shape
+        input_depth, input_height, input_width = input_shape
+        
+        # initialize layers' attributes
+        self.depth = depth
+        self.input_shape = input_shape
+        self.input_depth = input_depth
+        # vedi formula su notebook 'Convolutional Neural Networks assignment_01' con padding=0, stride=1
+        self.output_shape = (depth, input_height - kernel_size + 1, input_width - kernel_size + 1)
+        self.kernel_shape = (depth, input_depth, kernel_size, kernel_size)
+        # generate random initial values for kernels and biases
+        self.kernels = np.random.randn(*self.kernel_shape)
+        self.biases = np.random.randn(*self.output_shape)
+    
+    def forward(self, input):
+        self.input = input
+        # initialize the output starting from the biases (they have the same shape as the output)
+        self.output = np.copy(self.biases)
+        for i in range(self.depth):
+            for j in range(self.input_depth):
+                self.output[i] += signal.correlate2d(self.input[j], self.kernels[i,j], 'valid')
+        return self.output
+
+
+
+
+
+
+def valid_cross_corr():
+    
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+parte vecchia
+"""
+
 
 def init_params(layers_dims):
   params = {}
@@ -54,26 +126,15 @@ def one_hot(Y):
   Y_one_hot = Y_one_hot.T
   return Y_one_hot
 
-def forward_prop(X, params):
+def conv_forward_prop(X, params):
   """
   Forward propagation for the L layers.
   First (L-1) layers: relu activation
   Last layer: softmax activation
   """
-  # number of layers (note: params contains W and b for each layer, so it's necessary to do //2)
-  L = len(params) // 2
+  # Retrieve dimensions from input
   
-  activations = {}
-  activations['A0'] = X
-
-  # for layers 1 to L-1 apply relu activation
-  for l in range(1,L):
-    activations['Z'+str(l)] = np.dot(params['W'+str(l)], activations['A'+str(l-1)]) + params['b'+str(l)]
-    activations['A'+str(l)] = relu(activations['Z'+str(l)])
-
-  # for layer L apply softmax activation
-  activations['Z'+str(L)] = np.dot(params['W'+str(L)], activations['A'+str(L-1)]) + params['b'+str(L)]
-  activations['A'+str(L)] = softmax(activations['Z'+str(L)])  
+  
   
   return activations
 
@@ -81,43 +142,18 @@ def forward_prop(X, params):
 def back_prop(activations, params, Y):
   """
   Inputs:
-  activations: dictionary like {'A0':..., 'A1':..., 'Z1':..., 'A2':..., ...}
-  params: dictionary like {'W1':..., 'b1':..., 'W2':...}
-  Y
+  
   Output:
-  grads: dictionary like {'dW1':..., 'db1':..., ...}
+  
   """
   
-  L = len(params) // 2  
-  one_hot_Y = one_hot(Y)  
-  m = one_hot_Y.shape[1]
-  
-  derivatives = {}
-  grads = {}
-  
-  # for layer L
-  derivatives['dZ'+str(L)] = (activations['A'+str(L)] - one_hot_Y)
-  grads['dW'+str(L)] = 1 / m * np.dot(derivatives['dZ'+str(L)], activations['A'+str(L-1)].T)
-  grads['db'+str(L)] = 1 / m * np.sum(derivatives['dZ'+str(L)])
-   
-  # for layers L-1 to 1
-  for l in reversed(range(1, L)):
-    derivatives['dZ'+str(l)] = np.dot(params['W'+str(l+1)].T, derivatives['dZ'+str(l+1)]) * deriv_relu(activations['Z'+str(l)])
-    grads['dW'+str(l)] = 1 / m * np.dot(derivatives['dZ'+str(l)], activations['A'+str(l-1)].T)
-    grads['db'+str(l)] = 1 / m * np.sum(derivatives['dZ'+str(l)], axis=1, keepdims=True)
   
   return grads
 
 def update_params(params, grads, alpha):
-  # number of layers
-  L = len(params) // 2
+  
 
-  params_updated = {}
-  for l in range(1, L+1):
-    params_updated['W'+str(l)] = params['W'+str(l)] - alpha*grads['dW'+str(l)]
-    params_updated['b'+str(l)] = params['b'+str(l)] - alpha*grads['db'+str(l)]
-
-  return params_updated
+  return 
 
 def cross_entropy(Y_one_hot, Y_hat, epsilon=1e-12):
   """
@@ -154,34 +190,6 @@ def get_accuracy(Y_hat, Y):
   accuracy (scalar)
   """
   return np.sum(Y_hat == Y) / Y.size
-
-def gradient_descent_optimization(X, Y, layers_size, max_iter, alpha):
-  # initiallize parameters Wl, bl for layers l=1,...,L
-  params = init_params(layers_size)
-  L = len(params)//2
-  accuracies = []
-  losses = []
-  for iter in range(1,max_iter+1):
-    # compute activations: forward propagation
-    activations = forward_prop(X, params)
-    # make prediction
-    Y_hat = get_predictions(activations['A'+str(L)])
-    # compute accuracy
-    accuracy = get_accuracy(Y_hat, Y)
-    accuracies.append(accuracy)
-    
-    # compute loss (cross_entropy)
-    loss = cross_entropy(one_hot(Y), activations['A'+str(L)])
-    losses.append(loss)
-
-    # compute gradients: back propagation
-    grads = back_prop(activations, params, Y)
-
-    # update the parameters
-    params = update_params(params, grads, alpha)
-
-    if iter % 10 == 0:
-      print('Accuracy at iter {}: {}'.format(iter, accuracy))
 
   # plot training accuracy and loss
   plt.plot(range(1, max_iter+1), accuracies, '-', color=sns.color_palette('deep')[0], linewidth=2, label='Training Accuracy')

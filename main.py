@@ -1,5 +1,12 @@
+"""
+Author: Riccardo Andreoni
+Title: Implementation of Convolutional Neural Network from scratch.
+File: main.py
+"""
+
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from utils import *
 
 def main():
@@ -30,10 +37,18 @@ def main():
   # layers_dims = [784, 10, 10]
   max_iter = 500
   alpha = 0.1
-
+  
   # train the network
-  params = gradient_descent_optimization(X_train, y_train, layers_dims, max_iter, alpha)
+  #params = gradient_descent_optimization(X_train, y_train, layers_dims, max_iter, alpha)
+  
+  # print some images
+  show_image(X_train[:,3])
+  
+def show_image(img_array, resize_shape=(28,28)):
+    array_reshaped = np.reshape(img_array, resize_shape)
+    plt.imshow(array_reshaped, cmap='viridis')
   
 if __name__ == '__main__':
   main()
+  
   
