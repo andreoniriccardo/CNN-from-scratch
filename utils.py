@@ -51,7 +51,7 @@ class Convolutional_Layer(Layer):
         
         for i in range(self.depth): # e.g. 0,1
             for j in range(self.input_depth): # e.g. 0,1,2
-                self.output[i] += signal.correlate2d(self.input[j], self.kernels[i,j], 'valid')
+                self.output[i] += signal.correlate2d(self.input[j], self.kernels[i,j], 'valid') # correlate2d is not commutative
         return self.output
 
 
