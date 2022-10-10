@@ -4,45 +4,46 @@ Title: Implementation of Convolutional Neural Network from scratch.
 File: main.py
 """
 
+from math import perm
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from utils import *
 
+import tensorflow as tf
+
 def main():
   # load training data
-  df_train = pd.read_csv('train.csv')
+  (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
+  X_train = X_train[:5000]
+  y_train = y_train[:5000]
 
-  # shuffle the data
-  df_train = shuffle_rows(df_train)
+  # Define the network
+  layers = [
+    ConvolutionLayer(8,3), # layer with 8 3x3 filters
+    MaxPoolingLayer(2), # pooling layer 2x2
+    SoftmaxLayer(13*13*8, 10) # softmax layer with 13*13*8 input and 10 output
+    ] 
 
-  # split train and validation set
-  train_val_split = 0.8
-  train_size = round(df_train.shape[0] * train_val_split)
-  data_train = df_train[:train_size,:].T
-  data_val = df_train[train_size:,:].T
+  for epoch in range(4):
+    print('Epoch {} ->'.format(epoch+1))
+    # Shuffle training data
+    permutation = np.random.permutation(len(X_train))
+    X_train = X_train[permutation]
+    y_train = y_train[permutation]
+    # Training the CNN
+    loss = 0
+    accuracy = 0
+    for i, (image, label) in enumerate(zip(X_train, y_train)):
+      if i % 100 == 0: # Every 100 examples
+        print("Step {}. For the last 100 steps: average loss {}, accuracy {}".format(i+1, loss/100, accuracy))
+        loss = 0
+        accuracy = 0
+      loss_1, accuracy_1 = CNN_training(image, label, layers)
+      loss += loss_1
+      accuracy += accuracy_1
   
-  # divide input features and target feature
-  X_train = data_train[1:]
-  y_train = data_train[0]
-  X_val = df_train[1:]
-  y_val = df_train[0]
   
-  # normalize training and val sets
-  X_train = normalize_pixels(X_train)
-  X_val = normalize_pixels(X_val)
-
-  # set network and optimizer parameters  
-  layers_dims = [784, 256, 128, 64, 10]
-  # layers_dims = [784, 10, 10]
-  max_iter = 500
-  alpha = 0.1
-  
-  # train the network
-  #params = gradient_descent_optimization(X_train, y_train, layers_dims, max_iter, alpha)
-  
-  # print some images
-  show_image(X_train[:,3])
   
 def show_image(img_array, resize_shape=(28,28)):
     array_reshaped = np.reshape(img_array, resize_shape)
