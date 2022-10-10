@@ -5,56 +5,76 @@ File: utils.py
 """
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-plt.style.use('seaborn-whitegrid')
-import seaborn as sns
 
-class Layer:
-    def __init__(self):
-        self.input = None
-        self.output = None
+class Convolution:
+    def __init__(self, kernel_num, kernel_size):
+        """
+        Constructor takes as input the number of kernels and their size. I assume only squared filters of size kernel_size x kernel_size
+        """
+        self.kernel_num = kernel_num
+        self.kernel_size = kernel_size
+        # Generate random filters of shape (kernel_num, kernel_size, kernel_size). Divide by kernel_size^2 for weight normalization
+        self.kernels = np.random.randn(kernel_num, kernel_size, kernel_size) / (kernel_size**2)
+
+    def patches_generator(self, image):
+        """
+        Divide the input image in patches to be used during convolution.
+        Yields the tuples containing the patches and their coordinates.
+        """
+        # Extract image height and width
+        image_h, image_w = image.shape
+        self.image = image
+        # The number of patches, given a fxf filter is h-f+1 for height and w-f+1 for width
+        for h in range(image_h-self.kernel_size+1):
+            for w in range(image_w-self.kernel_size+1):
+                patch = image[h:h+self.kernel_size, w:w+self.kernel_size]
+                yield (patch, h, w)
+                #usare yield perchè è un generator, che genera i patches e le loro coordinate
     
-    def forward(self, input):
-        
-        pass
+    def forward_prop(self, image):
+        # Extract image height and width
+        image_h, image_w = image.shape
+        # Initialize the convolution output volume of the correct size
+        convolution_output = np.zeros((image_h-self.kernel_size+1, image_w-self.kernel_size+1, self.kernel_num))
+        # Unpack the generator
+        for (patch, h, w) in self.patches_generator(image):
+            # Perform convolution for each patch
+            convolution_output[h,w] = np.sum(patch*self.kernels, axis=(1,2))
+        return convolution_output
     
-    def backward(self, output_gradient, learning_rate):
-        
-        
-        pass
-
-# create Convolutional_Layer class. It inherits from Layer class
-class Convolutional_Layer(Layer):
-    def __init__(self, input_shape, kernel_size, depth):
-        # unpack input shape
-        input_depth, input_height, input_width = input_shape
-        
-        # initialize layers' attributes
-        self.depth = depth # number of kernels in the conv layer e.g. 2
-        
-        self.input_shape = input_shape # e.g. (3,3,3)
-        self.input_depth = input_depth # e.g. 3
-        
-        # vedi formula su notebook 'Convolutional Neural Networks assignment_01' con padding=0, stride=1
-        self.output_shape = (depth, input_height - kernel_size + 1, input_width - kernel_size + 1) # e.g. (2,2,2)
-        self.kernel_shape = (depth, input_depth, kernel_size, kernel_size) # e.g. (2,3,2,2)
-        
-        # generate random initial values for kernels and biases
-        self.kernels = np.random.randn(*self.kernel_shape) # e.g. (2,3,2,2)
-        self.biases = np.random.randn(*self.output_shape) # e.g. (2,2,2)
-    
-    def forward(self, input):
-        self.input = input
-        
-        # initialize the output starting from the biases (they have the same shape as the output)
-        self.output = np.copy(self.biases) # e.g. (2,2,2)
-        
-        for i in range(self.depth): # e.g. 0,1
-            for j in range(self.input_depth): # e.g. 0,1,2
-                self.output[i] += signal.correlate2d(self.input[j], self.kernels[i,j], 'valid') # correlate2d is not commutative
-        return self.output
+    def back_prop(self, dE_dY, alpha):
+        """
+        Takes the gradient of the loss function with respect to the output and computes the gradients of the loss function with respect
+        to the kernels' weights.
+        dE_dY comes from the following layer, typically max pooling layer.
+        It updates the kernels' weights
+        """
+        # Initialize gradient of the loss function with respect to the kernel weights
+        dE_dk = np.zeros(self.kernels.shape)
+        for (patch, h, w) in self.patches_generator(self.image):
+            for f in range(self.kernel_num):
+                dE_dk[f] += patch * dE_dY[h, w, f]
+        # Update the parameters
+        self.kernels -= alpha*dE_dk
+        return dE_dk
 
 
 
+# Test
+df_train = pd.read_csv('train.csv')
+img = df_train.iloc[40,:].values[1:]
+img = np.reshape(img,(28,28))
+plt.imshow(img, cmap='gray')
+plt.show()
+print(img.shape)
 
+# Test with a convolution of 16 filters of size 3x3
+my_conv = Convolution(16,3)
+output = my_conv.forward_prop(img)
+output.shape
 
+# Plot 16th volume after the convolution
+plt.imshow(output[:,:,15], cmap='gray')
+plt.show()
