@@ -20,9 +20,9 @@ def main():
 
   # Define the network
   layers = [
-    ConvolutionLayer(8,3), # layer with 8 3x3 filters
-    MaxPoolingLayer(2), # pooling layer 2x2
-    SoftmaxLayer(13*13*8, 10) # softmax layer with 13*13*8 input and 10 output
+    ConvolutionLayer(16,3), # layer with 8 3x3 filters, output (26,26,16)
+    MaxPoolingLayer(2), # pooling layer 2x2, output (13,13,16)
+    SoftmaxLayer(13*13*16, 10) # softmax layer with 13*13*16 input and 10 output
     ] 
 
   for epoch in range(4):

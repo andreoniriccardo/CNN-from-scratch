@@ -29,8 +29,8 @@ class ConvolutionLayer:
         # The number of patches, given a fxf filter is h-f+1 for height and w-f+1 for width
         for h in range(image_h-self.kernel_size+1):
             for w in range(image_w-self.kernel_size+1):
-                patch = image[h:h+self.kernel_size, w:w+self.kernel_size]
-                yield (patch, h, w)
+                patch = image[h:(h+self.kernel_size), w:(w+self.kernel_size)]
+                yield patch, h, w
                 #usare yield perchè è un generator, che genera i patches e le loro coordinate
     
     def forward_prop(self, image):
@@ -39,7 +39,7 @@ class ConvolutionLayer:
         # Initialize the convolution output volume of the correct size
         convolution_output = np.zeros((image_h-self.kernel_size+1, image_w-self.kernel_size+1, self.kernel_num))
         # Unpack the generator
-        for (patch, h, w) in self.patches_generator(image):
+        for patch, h, w in self.patches_generator(image):
             # Perform convolution for each patch
             convolution_output[h,w] = np.sum(patch*self.kernels, axis=(1,2))
         return convolution_output
@@ -53,7 +53,7 @@ class ConvolutionLayer:
         """
         # Initialize gradient of the loss function with respect to the kernel weights
         dE_dk = np.zeros(self.kernels.shape)
-        for (patch, h, w) in self.patches_generator(self.image):
+        for patch, h, w in self.patches_generator(self.image):
             for f in range(self.kernel_num):
                 dE_dk[f] += patch * dE_dY[h, w, f]
         # Update the parameters
@@ -79,13 +79,13 @@ class MaxPoolingLayer:
 
         for h in range(output_h):
             for w in range(output_w):
-                patch = image[h*self.kernel_size:h*self.kernel_size+self.kernel_size, w*self.kernel_size:w*self.kernel_size+self.kernel_size]
-                yield (patch, h, w)
+                patch = image[(h*self.kernel_size):(h*self.kernel_size+self.kernel_size), (w*self.kernel_size):(w*self.kernel_size+self.kernel_size)]
+                yield patch, h, w
 
     def forward_prop(self, image):
         image_h, image_w, num_kernels = image.shape
         max_pooling_output = np.zeros((image_h//self.kernel_size, image_w//self.kernel_size, num_kernels))
-        for (patch, h, w) in self.patches_generator(self.image):
+        for patch, h, w in self.patches_generator(image):
             max_pooling_output[h,w] = np.amax(patch, axis=(0,1))
         return max_pooling_output
 
@@ -97,7 +97,7 @@ class MaxPoolingLayer:
         There are no weights to update, but the output is needed to update the weights of the convolutional layer.
         """
         dE_dk = np.zeros(self.image.shape)
-        for (patch,h,w) in self.patches_generator(self.image):
+        for patch,h,w in self.patches_generator(self.image):
             image_h, image_w, num_kernels = patch.shape
             max_val = np.amax(patch, axis=(0,1))
 
@@ -105,8 +105,8 @@ class MaxPoolingLayer:
                 for idx_w in range(image_w):
                     for idx_k in range(num_kernels):
                         if patch[idx_h,idx_w,idx_k] == max_val[idx_k]:
-                            dE_dk[h*self.kernel_size+idx_h, idx_w*self.kernel_size+idx_w, idx_k] = dE_dY[h,w,idx_k]
-        return dE_dk
+                            dE_dk[h*self.kernel_size+idx_h, w*self.kernel_size+idx_w, idx_k] = dE_dY[h,w,idx_k]
+            return dE_dk
 
 class SoftmaxLayer:
     """
@@ -170,7 +170,7 @@ def CNN_forward(image, label, layers):
 
 def CNN_backprop(gradient, layers, alpha=0.05):
     grad_back = gradient
-    for layer in layers:
+    for layer in layers[::-1]:
         if type(layer) in [ConvolutionLayer, SoftmaxLayer]:
             grad_back = layer.back_prop(grad_back, alpha)
         elif type(layer) == MaxPoolingLayer:
