@@ -4,16 +4,13 @@ Title: Implementation of Convolutional Neural Network from scratch.
 File: main.py
 """
 
-from math import perm
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-from utils import *
 
+import numpy as np
+from utils import *
 import tensorflow as tf
 
 def main():
-  # load training data
+  # Load training data
   (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
   X_train = X_train[:5000]
   y_train = y_train[:5000]
@@ -43,11 +40,6 @@ def main():
       loss += loss_1
       accuracy += accuracy_1
   
-  
-  
-def show_image(img_array, resize_shape=(28,28)):
-    array_reshaped = np.reshape(img_array, resize_shape)
-    plt.imshow(array_reshaped, cmap='viridis')
   
 if __name__ == '__main__':
   main()

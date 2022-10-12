@@ -4,8 +4,6 @@ Title: Implementation of Convolutional Neural Network from scratch.
 File: utils.py
 """
 
-from audioop import maxpp
-from turtle import forward
 import numpy as np
 
 class ConvolutionLayer:
@@ -31,9 +29,11 @@ class ConvolutionLayer:
             for w in range(image_w-self.kernel_size+1):
                 patch = image[h:(h+self.kernel_size), w:(w+self.kernel_size)]
                 yield patch, h, w
-                #usare yield perchè è un generator, che genera i patches e le loro coordinate
     
     def forward_prop(self, image):
+        """
+        Perform forward propagation for the convolutional layer.
+        """
         # Extract image height and width
         image_h, image_w = image.shape
         # Initialize the convolution output volume of the correct size
@@ -194,9 +194,10 @@ def CNN_training(image, label, layers, alpha=0.05):
 
 
 
-
 """
-Test the convolutions with 1 image, to put in the article
+import pandas as pd
+import matplotlib.pyplot as plt
+#Test the convolutions with 1 image, to put in the article
 # Test
 df_train = pd.read_csv('train.csv')
 img = df_train.iloc[40,:].values[1:]
@@ -204,9 +205,10 @@ img = np.reshape(img,(28,28))
 plt.imshow(img, cmap='gray')
 plt.show()
 print(img.shape)
+plt.savefig('images/original_image.png', format='png', dpi=1200)
 
 # Test with a convolution of 16 filters of size 3x3
-my_conv = ConvolutionLayer(16,3)
+my_conv = ConvolutionLayer(32,3)
 output = my_conv.forward_prop(img)
 # See the dimensions of the output volume, they follow the usual formula
 print(output.shape)
@@ -214,4 +216,5 @@ print(output.shape)
 # Plot 16th volume after the convolution
 plt.imshow(output[:,:,15], cmap='gray')
 plt.show()
+plt.savefig('images/image_convolved.png', format='png', dpi=1200)
 """
