@@ -106,7 +106,7 @@ class MaxPoolingLayer:
                     for idx_k in range(num_kernels):
                         if patch[idx_h,idx_w,idx_k] == max_val[idx_k]:
                             dE_dk[h*self.kernel_size+idx_h, w*self.kernel_size+idx_w, idx_k] = dE_dY[h,w,idx_k]
-            return dE_dk
+        return dE_dk
 
 class SoftmaxLayer:
     """
